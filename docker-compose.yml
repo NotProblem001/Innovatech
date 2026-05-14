@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: innovatech-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: innovatech_db
+      MYSQL_USER: user_innovatech
+      MYSQL_PASSWORD: password123
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_innovatech_data:/var/lib/mysql # AQUÍ APLICAS LA PERSISTENCIA (Named Volume)
+    networks:
+      - innovatech-net
+
+  back-ventas:
+    build:
+      context: ./back-Ventas_SpringBoot/Springboot-API-REST
+    container_name: backend-ventas
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/innovatech_db?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=user_innovatech
+      - SPRING_DATASOURCE_PASSWORD=password123
+    depends_on:
+      - db
+    networks:
+      - innovatech-net
+
+  back-despachos:
+    build:
+      context: ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+    container_name: backend-despachos
+    restart: always
+    ports:
+      - "8081:8080" # Lo mapeamos al 8081 local para que no choque con ventas
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/innovatech_db?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=user_innovatech
+      - SPRING_DATASOURCE_PASSWORD=password123
+    depends_on:
+      - db
+    networks:
+      - innovatech-net
+
+  frontend:
+    build:
+      context: ./front_despacho
+    container_name: frontend-app
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - back-ventas
+      - back-despachos
+    networks:
+      - innovatech-net
+
+# DEFINICIÓN DEL NAMED VOLUME (Justificación técnica en la defensa)
+volumes:
+  db_innovatech_data:
+
+networks:
+  innovatech-net:
+    driver: bridge
