@@ -1,0 +1,65 @@
+name: CI/CD Backend Despachos Innovatech
+
+on:
+  push:
+    branches: [ "deploy" ]
+    paths:
+      - "back-Despachos_SpringBoot/**" # Solo reacciona a cambios en Despachos
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v3
+
+    - name: Configurar credenciales AWS
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Login en Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Construir y Subir Imagen Docker (Build & Push)
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: innovatech-backend-despachos
+        IMAGE_TAG: latest
+      run: |
+        # Entramos a la subcarpeta del proyecto de despachos
+        cd back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Despliegue en Instancia EC2 Backend (CD)
+      uses: appleboy/ssh-action@v1.0.3
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: innovatech-backend-despachos
+        IMAGE_TAG: latest
+      with:
+        host: ${{ secrets.EC2_BACKEND_HOST }} 
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        envs: ECR_REGISTRY, ECR_REPOSITORY, IMAGE_TAG
+        script: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+          
+          docker stop backend-despachos || true
+          docker rm backend-despachos || true
+          
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+          # Levantar en un puerto distinto para que no choque con Ventas (ej: 8081)
+          docker run -d --name backend-despachos \
+            --restart always \
+            -p 8081:8080 \
+            -e DB_URL=${{ secrets.DB_URL_DESPACHOS }} \
+            -e DB_USER=${{ secrets.DB_USER }} \
+            -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
