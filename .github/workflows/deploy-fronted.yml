@@ -2,7 +2,7 @@ name: CI/CD Frontend Innovatech
 
 on:
   push:
-    branches: [ "deploy" ]
+    branches: [ "main" ]
     paths:
       - "front_despacho/**"
 
