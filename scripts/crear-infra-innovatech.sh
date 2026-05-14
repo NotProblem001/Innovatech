@@ -82,7 +82,6 @@ echo "=== 5. Creando Repositorios ECR ==="
 for repo in $PREFIX-frontend $PREFIX-backend; do
   aws ecr describe-repositories --repository-names $repo >/dev/null 2>&1 || aws ecr create-repository --repository-name $repo
 done
-#cambio 1
 
 echo "=== 6. Creando Instancias EC2 ==="
 cat <<EOF > user_data.sh
