@@ -78,10 +78,6 @@ DATA_SG_ID=$(aws ec2 create-security-group --group-name $PREFIX-data-sg --descri
 aws ec2 authorize-security-group-ingress --group-id $DATA_SG_ID --protocol tcp --port 3306 --source-group $BACK_SG_ID 2>/dev/null || true
 aws ec2 authorize-security-group-ingress --group-id $DATA_SG_ID --protocol icmp --port -1 --source-group $BACK_SG_ID 2>/dev/null || true
 
-echo "=== 5. Creando Repositorios ECR ==="
-for repo in $PREFIX-frontend $PREFIX-backend; do
-  aws ecr describe-repositories --repository-names $repo >/dev/null 2>&1 || aws ecr create-repository --repository-name $repo
-done
 
 echo "=== 6. Creando Instancias EC2 ==="
 cat <<EOF > user_data.sh
