@@ -104,6 +104,7 @@ get_or_create_ec2() {
       --subnet-id $subnet \
       --security-group-ids $sg \
       --iam-instance-profile Name=LabInstanceProfile \
+      --key-name vockey \
       $public_ip \
       --user-data file://user_data.sh \
       --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$name}]" \
