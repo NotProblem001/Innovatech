@@ -2,7 +2,7 @@ name: CI/CD Backend Despachos
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "deploy" ]
     paths:
       - "back-Despachos_SpringBoot/**"
   workflow_dispatch:
