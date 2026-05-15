@@ -2,9 +2,10 @@ name: CI/CD Backend Ventas
 
 on:
   push:
-    branches: [ "deploy" ]
+    branches: [ "main" ]
     paths:
       - "back-Ventas_SpringBoot/**"
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
